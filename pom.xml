@@ -102,6 +102,33 @@
 			<artifactId>commons-codec</artifactId>
 			<version>1.10</version>
 		</dependency>
+				<!--  Gson: Java to Json conversion -->
+	    <dependency>
+	      	<groupId>com.google.code.gson</groupId>
+	      	<artifactId>gson</artifactId>
+	      	<version>2.3.1</version>
+	      	<scope>compile</scope>
+	    </dependency>
+		
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.plugin</groupId>
+			<artifactId>spring-plugin-core</artifactId>
+			<version>1.1.0.RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>com.jayway.jsonpath</groupId>
+			<artifactId>json-path</artifactId>
+			<version>0.9.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.hateoas</groupId>
+			<artifactId>spring-hateoas</artifactId>
+		</dependency>
+		
 		<dependency>
     		<groupId>org.easyrules</groupId>
     		<artifactId>easyrules-core</artifactId>

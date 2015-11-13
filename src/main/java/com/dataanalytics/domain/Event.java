@@ -9,11 +9,18 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import java.util.Date;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.net.URI;
+import java.net.URISyntaxException;
+
 
 @Document(indexName = "event")
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Event {
+    Logger logger = LoggerFactory.getLogger(Event.class);
+    
     private String documentId;
     private String customerEmailHash;
     private String employeeId;
@@ -60,6 +67,14 @@ public class Event {
         this.transactionId = transactionId;
     }
 
+    public Event(String documentId, Event toClone) {
+        this(documentId, toClone.customerEmailHash,
+                toClone.employeeId, toClone.transactionId,
+                toClone.serialNumber, toClone.storeNumber,
+                toClone.timestamp, toClone.type);
+    }
+
+    
     private void checkForTimestamp(Date timestamp) {
         this.timestamp = timestamp;
         if (this.timestamp == null) {
@@ -146,6 +161,21 @@ public class Event {
     public void setType(Type type) {
         this.type = type;
     }
+    
+    public Reference buildReference() {
+        return new Reference(documentId);
+    }
+
+    public URI buildURI() {
+        URI uri = null;
+        try {
+            uri = new URI("/event/"+documentId);
+        } catch (URISyntaxException e) {
+            logger.error(e.getMessage(), e);
+        }
+        return uri;
+    }
+
 
     @Override
     public boolean equals(Object o) {
