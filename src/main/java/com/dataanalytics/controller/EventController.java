@@ -1,44 +1,48 @@
 package com.dataanalytics.controller;
 
-import com.dataanalytics.domain.Event;
-import com.dataanalytics.service.EventService;
+import static org.springframework.web.bind.annotation.RequestMethod.GET;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.*;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpStatus;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.web.bind.annotation.*;
+import com.dataanalytics.domain.Event;
+import com.dataanalytics.domain.Reference;
+import com.dataanalytics.service.EventService;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import static org.springframework.web.bind.annotation.RequestMethod.*;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.PagedResources;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
-import com.dataanalytics.domain.Reference;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.*;
+import org.springframework.web.bind.annotation.*;
 
 
 @RestController
 @RequestMapping
 
 public class EventController {
-	
+
     @Autowired
     private EventService eventService;
 
     @RequestMapping(value = {"/event"}, method = GET)
-    List<Event> getEvents(@RequestParam("page") int page, @RequestParam("size") int size) {
-        return eventService.fetchPage(eventService.buildPageable(page, size));
+    Iterable<Event> getEvents(@RequestParam("page") int page, @RequestParam("size") int size) {
+        Page<Event> events = eventService.fetchPage(eventService.buildPageable(page, size));
+        for (Event e: events) {
+            decorateEvent(e);
+        }
+        return events;
     }
 
     @RequestMapping(value = {"/event/{documentId}"}, method = GET)
     Event getEvent(@PathVariable("documentId") String documentId) {
-        return eventService.fetch(documentId);
+        return decorateEvent(eventService.fetch(documentId));
     }
 
     @RequestMapping(value = "/api/v1/event", method = POST)
@@ -51,26 +55,55 @@ public class EventController {
                     @RequestParam("type") Event.Type type) {
         Event event = eventService.buildEvent(customerEmailHash, employeeId,
                 transactionId, serialNumber, storeNumber, timestamp, type);
-        eventService.add(event);
-        return decorateRefernce(event.buildReference());
+        eventService.addDeferred(event);
+        return decorateReference(event.buildReference());
     }
 
     @RequestMapping(value = {"/api/v2/event", "/event"}, method = POST)
     @ResponseBody
     HttpEntity<Reference> postEvent(@RequestBody Event event) {
         Event newEvent = new Event(eventService.buildDocumentId(), event);
-        eventService.addDefered(newEvent);
-        return decorateRefernce(newEvent.buildReference());
+         eventService.addDeferred(newEvent);
+        
+        return decorateReference(newEvent.buildReference());
     }
     
     @RequestMapping(value = {"/api/v1/event/bulk", "/api/v2/event/bulk", "/event/bulk"}, method = POST)
     @ResponseStatus(HttpStatus.ACCEPTED)
-    void bulkUploadEvent(@RequestBody final ArrayList<Event> eventList) {
-         eventService.addAll(eventList);
+    HttpEntity<List<Reference>>  bulkUploadEvent(@RequestBody final List<Event> eventList) {
+    	List<Event> newEventList = eventService.buildEventList(eventList);
+    	//prepare reference list
+    	eventService.addAll(newEventList);
+    	List<Reference> refList = prepareReferenceList(newEventList);
+    	System.out.println("controller processing complete");
+    	
+    	return decorateReference(refList);
     }
 
-    private HttpEntity<Reference> decorateRefernce(Reference ref) {
+    private List<Reference> prepareReferenceList(List<Event> eventList) {
+    	List<Reference>  refList = new ArrayList<>();
+    	for(Event event : eventList){
+    		refList.add(event.buildReference());
+    	}
+		
+		return refList;
+	}
+
+	private HttpEntity<Reference> decorateReference(Reference ref) {
         ref.add(linkTo(methodOn(EventController.class).getEvent(ref.getDocumentId())).withSelfRel());
         return new ResponseEntity<>(ref, HttpStatus.ACCEPTED);
     }
+
+    private Event decorateEvent(Event ref) {
+        ref.add(linkTo(methodOn(EventController.class).getEvent(ref.getDocumentId())).withSelfRel());
+        return ref;
+    }
+    
+    private HttpEntity<List<Reference>> decorateReference(List<Reference> refList) {
+    	for(Reference reference : refList){
+    		reference.add(linkTo(methodOn(EventController.class).getEvent(reference.getDocumentId())).withSelfRel());
+    	}
+        return new ResponseEntity<>(refList, HttpStatus.ACCEPTED);
+    }
+    
 }

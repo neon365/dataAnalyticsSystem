@@ -1,12 +1,16 @@
 package com.dataanalytics.dao;
 
 import com.dataanalytics.domain.Event;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.couchbase.client.protocol.views.Query;
+
+import org.springframework.data.couchbase.core.view.View;
+import org.springframework.data.couchbase.repository.CouchbaseRepository;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 
-public interface EventRepository extends PagingAndSortingRepository<Event, String> {
-    Page<Event> findByCustomerEmailHash(String cutomerEmailHash, Pageable page);
-    Page<Event> findByCustomerEmailHashAndType(String cutomerEmailHash, Event.Type type, Pageable page);
+@SuppressWarnings("unused")
+public interface EventRepository extends CouchbaseRepository<Event, String> {
+//    @View(designDocument = "event", viewName = "all")
+//    Iterable<Event> customViewQuery(Query query);
 }

@@ -1,26 +1,26 @@
 package com.dataanalytics.domain;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Date;
+import java.util.UUID;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Document;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.springframework.data.elasticsearch.annotations.Document;
-
-import java.util.Date;
-import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.net.URI;
-import java.net.URISyntaxException;
+import org.springframework.hateoas.ResourceSupport;
 
 
-@Document(indexName = "event")
+@Document(indexName="event")
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Event {
-    Logger logger = LoggerFactory.getLogger(Event.class);
-    
+public class Event extends ResourceSupport {
+
+	@Id
     private String documentId;
     private String customerEmailHash;
     private String employeeId;
@@ -74,7 +74,6 @@ public class Event {
                 toClone.timestamp, toClone.type);
     }
 
-    
     private void checkForTimestamp(Date timestamp) {
         this.timestamp = timestamp;
         if (this.timestamp == null) {
@@ -161,9 +160,9 @@ public class Event {
     public void setType(Type type) {
         this.type = type;
     }
-    
+
     public Reference buildReference() {
-        return new Reference(documentId);
+        return new Reference(documentId, timestamp);
     }
 
     public URI buildURI() {
@@ -171,10 +170,11 @@ public class Event {
         try {
             uri = new URI("/event/"+documentId);
         } catch (URISyntaxException e) {
-            logger.error(e.getMessage(), e);
+            //Swallow exception
         }
         return uri;
     }
+
 
 
     @Override

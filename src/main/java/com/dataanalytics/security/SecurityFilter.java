@@ -38,6 +38,7 @@ public class SecurityFilter implements Filter {
 	public static final String ACCESS_KEY = "accesskey";
 	public static final String OVERRIDE_AUTHENTICATION = "overrideathentication";
 	public static final String CONTENT_TYPE = "Content-Type";
+	public static final String AUTH_KEY = "oUnlpCWG6XBzbj2JdsjCRqtJYYPcRtMc";
 	public static final String[] EXCLUDED_URLS = {"/swagger-ui/index.html", "/api-docs","/api-docs/default/basic-error-controller","/api-docs/default/diagnostic-controller","/api-docs/default/event-controller"};
 	public static final String RESOURCE_URLS_REGEX = "/swagger-ui/lib/*.js";
 	
@@ -94,7 +95,7 @@ public class SecurityFilter implements Filter {
 			String requestURI = theHttpRequest.getRequestURI();
 			String currentDate = theHttpRequest.getHeader(DATE_HEADER_KEY);
 			String appId = theHttpRequest.getHeader(APP_ID_HEADER_KEY);   // for this app we have shared secretkey 
-			System.out.println(requestURI);
+			//System.out.println(requestURI);
 			if( (!requestURI.endsWith(".js") && !requestURI.endsWith(".css") && !requestURI.endsWith(".html") && !requestURI.startsWith("/kibana-3.1.2") && !Arrays.asList(EXCLUDED_URLS).contains(requestURI))){
 				aSecretCertificate = theHttpRequest.getHeader(SECRET_KEY);  // this is client HMAC
 				aValidRequest = SecurityFilter.isValidCertificate(aSecretCertificate, currentDate, appId);

@@ -1,20 +1,32 @@
 package com.dataanalytics.config;
 
-import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+import java.util.Arrays;
+import java.util.List;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
-import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
+import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 
 @Configuration
-@EnableElasticsearchRepositories(basePackages = "com/dataanalytics/dao")
-class RepositoryConfig {
+@EnableCouchbaseRepositories("com.dataanalytics.dao")
+class RepositoryConfig extends AbstractCouchbaseConfiguration {
 
-     @Bean
-     public ElasticsearchOperations elasticsearchTemplate() {
-        return new ElasticsearchTemplate(nodeBuilder().local(true).node().client());
-     }
+	@Override
+	protected List<String> bootstrapHosts() {
+		// TODO remove hard coding and replace values based on environment
+		return Arrays.asList("localhost");
+	}
 
+	@Override
+	protected String getBucketName() {
+		// TODO remove hard coding and replace values based on environment
+		return "event";
+	}
+
+	@Override
+	protected String getBucketPassword() {
+		// TODO remove hard coding and replace values based on environment
+		return "";
+	}
 }

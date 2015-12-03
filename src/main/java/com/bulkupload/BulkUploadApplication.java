@@ -1,36 +1,39 @@
 package com.bulkupload;
 
+import static java.lang.Math.random;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.methods.PostMethod;
-
-import com.dataanalytics.domain.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.lang.Math.random;
+import com.dataanalytics.domain.Event;
 
 public class BulkUploadApplication {
     Logger logger = LoggerFactory.getLogger(BulkUploadApplication.class);
 
-	public String generateMD5Hash(String value) throws NoSuchAlgorithmException, UnsupportedEncodingException {
-		MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-		messageDigest.update(value.getBytes(), 0, value.length());
-		return new String(Base64.encodeBase64(messageDigest.digest(), false, true), "utf-8");
-	}
-
+	private String encryptCustomerToken(String value)throws NoSuchAlgorithmException {
+        MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+        messageDigest.update(value.getBytes(), 0, value.length());
+        return new BigInteger(1, messageDigest.digest()).toString(16);
+    }
 	
 	public BufferedInputStream saveJson(String json) throws Exception {
 		ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(
@@ -43,13 +46,17 @@ public class BulkUploadApplication {
 	public void uploadBulkData(int threshold) throws IOException,
 			NoSuchAlgorithmException {
 
-        ExecutorService executor = Executors.newFixedThreadPool(32);
+		MultiThreadedHttpConnectionManager connectionManager =
+				new MultiThreadedHttpConnectionManager();
+		connectionManager.getParams().setMaxTotalConnections(100);
+		final HttpClient httpClient = new HttpClient(connectionManager);
+
+        ExecutorService executor = Executors.newFixedThreadPool(100);
         List<Future<Result>> futureList = new ArrayList<>();
         Callable<Result> callable = new Callable<Result>() {
             @Override
             public Result call() throws Exception {
                 PostMethod post = new PostMethod("http://localhost:8080/api/v1/event");
-                HttpClient httpclient = new HttpClient();
                 NameValuePair[] requestParameterArray = preparePostParameters();
 
                 // Add request headers to authenticate request
@@ -66,7 +73,7 @@ public class BulkUploadApplication {
                 Result result = null;
                 try {
                     long currentTime = System.currentTimeMillis();
-                    responseCode = httpclient.executeMethod(post);
+                    responseCode = httpClient.executeMethod(post);
                     result = new Result(System.currentTimeMillis() - currentTime, responseCode);
                     if (logger.isTraceEnabled()) {
                         logger.trace("Response status code: " + responseCode);
@@ -91,7 +98,7 @@ public class BulkUploadApplication {
                     logger.debug("Got result: " + result.resultCode+ " took: "+result.timeTaken+"ms");
                     if (result.resultCode != 202) {
                         logger.error("Failed, shutting down");
-                        //break;
+                        break;
                     }
                 }
             } catch (InterruptedException | ExecutionException e) {
@@ -100,10 +107,12 @@ public class BulkUploadApplication {
         }
         executor.shutdown();
 	}
+	
+
 
 	private NameValuePair[] preparePostParameters()
-			throws NoSuchAlgorithmException, UnsupportedEncodingException {
-		NameValuePair cutsomerTokenParam = new NameValuePair("customerEmailHash", generateMD5Hash("abc@xyz.com"));
+			throws NoSuchAlgorithmException {
+		NameValuePair cutsomerTokenParam = new NameValuePair("customerEmailHash",encryptCustomerToken("swagat.maiti@gmail.com"));
 		NameValuePair employeeTokenParam = new NameValuePair("employeeId",""+(long)(1000000000000L*random()));
 		NameValuePair requestTokenParam = new NameValuePair("transactionId",""+(long)(100000000000L*random())%500);
         Event.Type randomType = Event.Type.values()[(int) (random() * Event.Type.values().length)];
@@ -137,7 +146,7 @@ public class BulkUploadApplication {
 
 	public static void main(String[] args) throws Exception {
 		BulkUploadApplication bulkUploadApplication = new BulkUploadApplication();
-		bulkUploadApplication.uploadBulkData(10000);
+		bulkUploadApplication.uploadBulkData(1000);
 
 	}
 
