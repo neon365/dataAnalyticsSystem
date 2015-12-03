@@ -1,28 +1,22 @@
 package com.dataanalytics.dao;
 
-import com.dataanalytics.TestApplication;
-import com.dataanalytics.domain.Event;
-import com.couchbase.client.CouchbaseClient;
-import com.couchbase.client.protocol.views.*;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
+import java.util.Date;
+
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import com.couchbase.client.protocol.views.Query;
+import com.dataanalytics.TestApplication;
+import com.dataanalytics.domain.Event;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes=TestApplication.class)
@@ -59,7 +53,7 @@ public class EventRepositoryTest {
         repository.save(event);
 
 //        CouchbaseClient cb = getCouchbaseOperations().getCouchbaseClient();
-//        com.couchbase.client.protocol.views.View view = cb.getView("com.apple.retail.odyssey.domain.Event", "all");
+//        com.couchbase.client.protocol.views.View view = cb.getView("com.dataanalytics.domain.Event", "all");
 
 
 //        Query query = new Query();
